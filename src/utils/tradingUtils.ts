@@ -1,10 +1,12 @@
-
 export interface TradeSettings {
   riskPercentage: number;
   stopLossPercent: number;
   takeProfitPercent: number;
   partialTakePercentage: number;
   maxTakeProfit: number;
+  selectedCurrency: string;
+  chartType: 'line' | 'candlestick';
+  metaTraderEnabled: boolean;
 }
 
 export interface TradeResult {
@@ -22,6 +24,15 @@ export interface TradeResult {
   takeProfitHits: number;
 }
 
+export interface Candlestick {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+}
+
 export interface Indicator {
   name: string;
   value: number;
@@ -37,6 +48,12 @@ export interface AccountStats {
   profitFactor: number;
 }
 
+export interface Currency {
+  symbol: string;
+  name: string;
+  type: 'forex' | 'crypto' | 'stock';
+}
+
 // Default trading settings based on requirements
 export const defaultTradingSettings: TradeSettings = {
   riskPercentage: 5, // 5% risk per trade
@@ -44,7 +61,22 @@ export const defaultTradingSettings: TradeSettings = {
   takeProfitPercent: 4, // 4% take profit (1:2 risk-reward)
   partialTakePercentage: 30, // 30% of position closed at take profit
   maxTakeProfit: 3, // 3 take profit levels
+  selectedCurrency: 'BTCUSD',
+  chartType: 'line',
+  metaTraderEnabled: false,
 };
+
+// Available currencies for trading
+export const availableCurrencies: Currency[] = [
+  { symbol: 'BTCUSD', name: 'Bitcoin/USD', type: 'crypto' },
+  { symbol: 'ETHUSD', name: 'Ethereum/USD', type: 'crypto' },
+  { symbol: 'EURUSD', name: 'EUR/USD', type: 'forex' },
+  { symbol: 'GBPUSD', name: 'GBP/USD', type: 'forex' },
+  { symbol: 'USDJPY', name: 'USD/JPY', type: 'forex' },
+  { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
+  { symbol: 'MSFT', name: 'Microsoft', type: 'stock' },
+  { symbol: 'AMZN', name: 'Amazon', type: 'stock' },
+];
 
 // Simulate price movement for demo
 export const generatePriceSeries = (
@@ -62,6 +94,44 @@ export const generatePriceSeries = (
   }
   
   return prices;
+};
+
+// Generate candlestick data
+export const generateCandlestickSeries = (
+  initialPrice: number,
+  periods: number,
+  volatility: number = 0.01
+): Candlestick[] => {
+  const candlesticks: Candlestick[] = [];
+  let currentPrice = initialPrice;
+  
+  for (let i = 0; i < periods; i++) {
+    // Generate random price movements
+    const changePercent = (Math.random() - 0.5) * 2 * volatility;
+    const open = currentPrice;
+    const close = open * (1 + changePercent);
+    
+    // Generate high and low with additional randomness
+    const highLowRange = open * volatility * Math.random();
+    const high = Math.max(open, close) + highLowRange;
+    const low = Math.min(open, close) - highLowRange;
+    
+    // Generate random volume
+    const volume = Math.floor(Math.random() * 1000) + 500;
+    
+    candlesticks.push({
+      time: i,
+      open,
+      high,
+      low,
+      close,
+      volume
+    });
+    
+    currentPrice = close;
+  }
+  
+  return candlesticks;
 };
 
 // Generate mock indicators for demo

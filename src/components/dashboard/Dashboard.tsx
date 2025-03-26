@@ -5,6 +5,7 @@ import PerformanceCard from './PerformanceCard';
 import StatisticsCard from './StatisticsCard';
 import TradingPanel from '../trading/TradingPanel';
 import TradingChart from '../trading/TradingChart';
+import MetaTraderConnect from '../trading/MetaTraderConnect';
 
 const Dashboard = () => {
   const { activeTrades } = useTrading();
@@ -17,6 +18,9 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
         <div className="md:col-span-3">
           <TradingPanel />
+          <div className="mt-4">
+            <MetaTraderConnect />
+          </div>
         </div>
         <div className="md:col-span-4">
           <TradingChart 

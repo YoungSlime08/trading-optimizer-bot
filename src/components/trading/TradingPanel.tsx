@@ -1,12 +1,22 @@
 
 import React, { useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, TrendingUp, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTrading } from '@/context/TradingContext';
 import { formatCurrency, formatPercentage } from '@/utils/tradingUtils';
 import RiskManagementSlider from './RiskManagementSlider';
 import GlassCard from '../common/GlassCard';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Toggle } from "@/components/ui/toggle";
 
 const TradingPanel = () => {
   const { toast } = useToast();
@@ -16,7 +26,10 @@ const TradingPanel = () => {
     executeNewTrade,
     accountStats,
     activeTrades,
-    indicators
+    indicators,
+    availableCurrencies,
+    isMetaTraderConnected,
+    executeMT5Trade
   } = useTrading();
   
   const [simulatedPrice, setSimulatedPrice] = useState(100);
@@ -43,7 +56,7 @@ const TradingPanel = () => {
     signalColor = 'text-trading-loss';
   }
   
-  const handleExecuteTrade = (direction: 'long' | 'short') => {
+  const handleExecuteTrade = async (direction: 'long' | 'short') => {
     if (activeTrades.length >= maxTrades) {
       toast({
         title: "Maximum trades reached",
@@ -53,6 +66,27 @@ const TradingPanel = () => {
       return;
     }
     
+    // Use MetaTrader if connected
+    if (settings.metaTraderEnabled && isMetaTraderConnected()) {
+      const success = await executeMT5Trade(direction, simulatedPrice);
+      if (success) {
+        toast({
+          title: `${direction === 'long' ? 'Buy' : 'Sell'} order executed via MetaTrader 5`,
+          description: `${settings.selectedCurrency} at ${formatCurrency(simulatedPrice)}`,
+        });
+        // Generate new price for next trade
+        setSimulatedPrice(prev => prev * (1 + (Math.random() - 0.5) * 0.03));
+      } else {
+        toast({
+          title: "Order execution failed",
+          description: "Failed to execute order via MetaTrader 5",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    
+    // Execute in simulation mode
     executeNewTrade(direction, simulatedPrice);
     
     // Generate new price for next trade
@@ -64,6 +98,33 @@ const TradingPanel = () => {
     });
   };
 
+  const handleCurrencyChange = (value: string) => {
+    updateSettings({ selectedCurrency: value });
+    
+    // Update simulated price based on the selected currency
+    const randomFactor = 0.9 + Math.random() * 0.2; // Between 0.9 and 1.1
+    
+    if (value.includes('BTC')) {
+      setSimulatedPrice(20000 * randomFactor);
+    } else if (value.includes('ETH')) {
+      setSimulatedPrice(1800 * randomFactor);
+    } else if (value.includes('EUR') || value.includes('GBP')) {
+      setSimulatedPrice(1.10 * randomFactor);
+    } else if (value.includes('JPY')) {
+      setSimulatedPrice(150 * randomFactor);
+    } else if (availableCurrencies.find(c => c.type === 'stock' && c.symbol === value)) {
+      setSimulatedPrice(120 * randomFactor);
+    } else {
+      setSimulatedPrice(100 * randomFactor);
+    }
+  };
+
+  const toggleChartType = () => {
+    updateSettings({ 
+      chartType: settings.chartType === 'line' ? 'candlestick' : 'line' 
+    });
+  };
+
   return (
     <GlassCard variant="elevated" className="p-4 space-y-6">
       <div className="flex items-center justify-between">
@@ -72,6 +133,63 @@ const TradingPanel = () => {
           <TrendingUp size={14} />
           <span>Smart Trading</span>
         </div>
+      </div>
+      
+      {/* Currency Selection and Chart Type */}
+      <div className="flex items-center justify-between gap-2">
+        <Select value={settings.selectedCurrency} onValueChange={handleCurrencyChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select Currency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Cryptocurrencies</SelectLabel>
+              {availableCurrencies
+                .filter(c => c.type === 'crypto')
+                .map(currency => (
+                  <SelectItem key={currency.symbol} value={currency.symbol}>
+                    {currency.name}
+                  </SelectItem>
+                ))
+              }
+            </SelectGroup>
+            <SelectGroup>
+              <SelectLabel>Forex</SelectLabel>
+              {availableCurrencies
+                .filter(c => c.type === 'forex')
+                .map(currency => (
+                  <SelectItem key={currency.symbol} value={currency.symbol}>
+                    {currency.name}
+                  </SelectItem>
+                ))
+              }
+            </SelectGroup>
+            <SelectGroup>
+              <SelectLabel>Stocks</SelectLabel>
+              {availableCurrencies
+                .filter(c => c.type === 'stock')
+                .map(currency => (
+                  <SelectItem key={currency.symbol} value={currency.symbol}>
+                    {currency.name}
+                  </SelectItem>
+                ))
+              }
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        
+        <Toggle 
+          pressed={settings.chartType === 'candlestick'} 
+          onPressedChange={toggleChartType}
+          aria-label="Toggle chart type"
+        >
+          {settings.chartType === 'line' ? (
+            <LineChart size={16} className="mr-1" />
+          ) : (
+            <BarChart3 size={16} className="mr-1" />
+          )}
+          {settings.chartType === 'line' ? 'Line' : 'Candles'}
+        </Toggle>
       </div>
       
       {/* Account Information */}
