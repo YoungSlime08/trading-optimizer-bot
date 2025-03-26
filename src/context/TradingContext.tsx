@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { 
   TradeSettings, 
@@ -234,8 +235,24 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         
+        // Filter indicators based on enabled settings
+        const filteredIndicators = indicators.filter(indicator => {
+          if (indicator.name.includes('SMA') && !settings.enabledIndicators.sma) return false;
+          if (indicator.name.includes('EMA') && !settings.enabledIndicators.ema) return false;
+          if (indicator.name.includes('RSI') && !settings.enabledIndicators.rsi) return false;
+          if (indicator.name.includes('MACD') && !settings.enabledIndicators.macd) return false;
+          if (indicator.name.includes('Bollinger') && !settings.enabledIndicators.bollinger) return false;
+          if (indicator.name.includes('Parabolic') && !settings.enabledIndicators.parabolicSar) return false;
+          return true;
+        });
+        
+        // Don't proceed if we have fewer than 2 indicators enabled
+        if (filteredIndicators.length < 2) {
+          return;
+        }
+        
         // Analyze market conditions
-        const analysis = analyzeMarketConditions(indicators);
+        const analysis = analyzeMarketConditions(filteredIndicators);
         
         // Check if we should execute a trade
         if (
@@ -254,7 +271,7 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
               if (success) {
                 toast({
                   title: "Auto-Trade Executed via MT5",
-                  description: `${direction === 'long' ? 'Buy' : 'Sell'} ${settings.selectedCurrency} at ${currentPrice.toFixed(2)} with ${(analysis.confidence * 100).toFixed(0)}% confidence`,
+                  description: `${direction === 'long' ? 'Buy' : 'Sell'} ${settings.selectedCurrency} at ${currentPrice.toFixed(2)} with ${(analysis.confidence * 100).toFixed(0)}% confidence. ${analysis.reason}`,
                 });
               }
             });
@@ -280,16 +297,16 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
       clearInterval(autoTradingIntervalRef.current);
       autoTradingIntervalRef.current = null;
     }
-  }, [settings.autoTrading, settings.tradingInterval, settings.minSignalStrength, settings.confirmationCount, indicators]);
+  }, [settings.autoTrading, settings.tradingInterval, settings.minSignalStrength, settings.confirmationCount, settings.enabledIndicators, indicators]);
 
   // Refresh indicators periodically (for demo)
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndicators(generateIndicators());
+      setIndicators(generateIndicators(candlestickData));
     }, 15000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [candlestickData]);
 
   // Update candlestick data
   useEffect(() => {

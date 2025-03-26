@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, TrendingUp, LineChart } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, TrendingUp, LineChart, InfoIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTrading } from '@/context/TradingContext';
 import { formatCurrency, formatPercentage } from '@/utils/tradingUtils';
@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 const TradingPanel = () => {
   const { toast } = useToast();
@@ -113,6 +115,10 @@ const TradingPanel = () => {
       setSimulatedPrice(1.10 * randomFactor);
     } else if (value.includes('JPY')) {
       setSimulatedPrice(150 * randomFactor);
+    } else if (value.includes('XAU')) {
+      setSimulatedPrice(2000 * randomFactor);
+    } else if (value.includes('US30') || value.includes('US500')) {
+      setSimulatedPrice(4500 * randomFactor);
     } else if (availableCurrencies.find(c => c.type === 'stock' && c.symbol === value)) {
       setSimulatedPrice(120 * randomFactor);
     } else {
@@ -132,7 +138,7 @@ const TradingPanel = () => {
         <h2 className="text-lg font-semibold">Element A Trading</h2>
         <div className="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-600 font-medium flex items-center space-x-1">
           <TrendingUp size={14} />
-          <span>Smart Trading</span>
+          <span>MT5 Trading</span>
         </div>
       </div>
       
@@ -161,6 +167,28 @@ const TradingPanel = () => {
               <SelectLabel>Forex</SelectLabel>
               {availableCurrencies
                 .filter(c => c.type === 'forex')
+                .map(currency => (
+                  <SelectItem key={currency.symbol} value={currency.symbol}>
+                    {currency.name}
+                  </SelectItem>
+                ))
+              }
+            </SelectGroup>
+            <SelectGroup>
+              <SelectLabel>Indices</SelectLabel>
+              {availableCurrencies
+                .filter(c => c.type === 'indices')
+                .map(currency => (
+                  <SelectItem key={currency.symbol} value={currency.symbol}>
+                    {currency.name}
+                  </SelectItem>
+                ))
+              }
+            </SelectGroup>
+            <SelectGroup>
+              <SelectLabel>Commodities</SelectLabel>
+              {availableCurrencies
+                .filter(c => c.type === 'commodities')
                 .map(currency => (
                   <SelectItem key={currency.symbol} value={currency.symbol}>
                     {currency.name}
@@ -283,22 +311,38 @@ const TradingPanel = () => {
       {/* Trading Signals */}
       <div>
         <h3 className="text-sm font-semibold mb-3">Trading Signals</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {indicators.map((indicator, index) => (
             <div 
               key={index} 
               className="px-3 py-2 rounded-md bg-gray-50"
             >
-              <p className="text-xs text-gray-500">{indicator.name}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">{indicator.name}</p>
+                {indicator.description && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <InfoIcon className="h-3 w-3 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{indicator.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold">{indicator.value}</p>
-                <span className={`text-xs font-medium ${
-                  indicator.signal === 'buy' ? 'text-trading-profit' : 
-                  indicator.signal === 'sell' ? 'text-trading-loss' : 
-                  'text-trading-neutral'
-                }`}>
+                <Badge 
+                  variant={
+                    indicator.signal === 'buy' ? 'success' :
+                    indicator.signal === 'sell' ? 'destructive' : 'outline'
+                  }
+                  className="text-[10px] h-5"
+                >
                   {indicator.signal.toUpperCase()}
-                </span>
+                </Badge>
               </div>
             </div>
           ))}
