@@ -68,6 +68,14 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           width={40}
           tick={{ fontSize: 10 }}
         />
+        <YAxis 
+          yAxisId="volume"
+          orientation="right"
+          tickFormatter={(value) => `${value}`}
+          width={40}
+          tick={{ fontSize: 8 }}
+          domain={[0, 'auto']}
+        />
         <Tooltip content={<CustomTooltip />} />
         
         {/* Render High-Low as line */}
