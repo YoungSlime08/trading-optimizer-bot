@@ -1,10 +1,11 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -13,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 100% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -32,22 +33,15 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.8rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -61,8 +55,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -97,5 +91,124 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md shadow-sm border border-white/20 rounded-lg;
+  }
+  
+  .glass-panel {
+    @apply bg-white/90 backdrop-blur-lg shadow-md border border-white/30 rounded-2xl;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-700;
+  }
+  
+  .indicator-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  
+  .indicator-dot.active {
+    @apply bg-trading-highlight animate-pulse-subtle;
+  }
+  
+  .indicator-dot.inactive {
+    @apply bg-gray-300;
+  }
+  
+  .chart-container {
+    @apply relative h-72 md:h-96 w-full overflow-hidden rounded-lg border border-gray-100;
+  }
+  
+  .trading-slider {
+    @apply appearance-none w-full h-2 rounded-full bg-gray-200;
+  }
+  
+  .trading-slider::-webkit-slider-thumb {
+    @apply appearance-none w-4 h-4 rounded-full bg-primary border-2 border-white cursor-pointer transition-all duration-200 ease-out;
+  }
+  
+  .trading-slider::-webkit-slider-thumb:hover {
+    @apply transform scale-125;
+  }
+  
+  .trading-slider:focus {
+    @apply outline-none ring-2 ring-primary/30;
+  }
+  
+  .profit-value {
+    @apply font-medium text-trading-profit;
+  }
+  
+  .loss-value {
+    @apply font-medium text-trading-loss;
+  }
+  
+  .neutral-value {
+    @apply font-medium text-trading-neutral;
+  }
+  
+  .stat-card {
+    @apply p-4 rounded-lg border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-md;
+  }
+  
+  .stat-value {
+    @apply text-2xl font-bold;
+  }
+  
+  .stat-label {
+    @apply text-sm text-gray-500;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+  
+  .button-glow {
+    @apply relative overflow-hidden;
+  }
+  
+  .button-glow::after {
+    content: '';
+    @apply absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+  }
+  
+  .button-glow:hover::after {
+    @apply opacity-100;
+  }
+  
+  .page-transition-enter {
+    @apply opacity-0;
+  }
+  
+  .page-transition-enter-active {
+    @apply opacity-100 transition-opacity duration-300;
+  }
+  
+  .page-transition-exit {
+    @apply opacity-100;
+  }
+  
+  .page-transition-exit-active {
+    @apply opacity-0 transition-opacity duration-300;
+  }
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 }

@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				trading: {
+					profit: '#4CAF50',
+					loss: '#FF5252',
+					neutral: '#607D8B',
+					highlight: '#2196F3',
+					indicator: '#E91E63',
+					chart: {
+						bg: 'rgba(250, 250, 250, 0.95)',
+						grid: 'rgba(230, 230, 230, 0.8)',
+						line: '#2196F3',
+						candle: {
+							up: '#4CAF50',
+							down: '#FF5252',
+						}
+					}
 				}
 			},
 			borderRadius: {
@@ -70,25 +87,57 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'fade-in': {
+					from: { opacity: '0' },
+					to: { opacity: '1' }
+				},
+				'fade-up': {
+					from: { opacity: '0', transform: 'translateY(20px)' },
+					to: { opacity: '1', transform: 'translateY(0)' }
+				},
+				'scale-in': {
+					from: { opacity: '0', transform: 'scale(0.9)' },
+					to: { opacity: '1', transform: 'scale(1)' }
+				},
+				'slide-in-right': {
+					from: { transform: 'translateX(100%)' },
+					to: { transform: 'translateX(0)' }
+				},
+				'pulse-subtle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.8' }
+				},
+				float: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-up': 'fade-up 0.4s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out',
+				'slide-in-right': 'slide-in-right 0.3s ease-out',
+				'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+				'float': 'float 6s ease-in-out infinite'
+			},
+			backdropFilter: {
+				'blur-sm': 'blur(4px)',
+				'blur': 'blur(8px)',
+				'blur-md': 'blur(12px)',
+				'blur-lg': 'blur(16px)',
+				'blur-xl': 'blur(24px)',
+			},
+			fontSize: {
+				'2xs': '0.625rem',
 			}
 		}
 	},

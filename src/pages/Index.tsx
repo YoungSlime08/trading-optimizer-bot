@@ -1,13 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import { TradingProvider } from '@/context/TradingContext';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import Dashboard from '@/components/dashboard/Dashboard';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <TradingProvider>
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-gray-50">
+        <Header />
+        <main className="flex-1 px-4 py-6 md:py-8 md:px-8 max-w-7xl mx-auto w-full">
+          <Dashboard />
+        </main>
+        <Footer />
       </div>
-    </div>
+    </TradingProvider>
   );
 };
 
