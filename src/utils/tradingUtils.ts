@@ -7,6 +7,10 @@ export interface TradeSettings {
   selectedCurrency: string;
   chartType: 'line' | 'candlestick';
   metaTraderEnabled: boolean;
+  autoTrading: boolean;
+  tradingInterval: number; // in seconds
+  minSignalStrength: number; // threshold to execute trades (0 to 1)
+  confirmationCount: number; // number of indicators that should confirm
 }
 
 export interface TradeResult {
@@ -64,6 +68,10 @@ export const defaultTradingSettings: TradeSettings = {
   selectedCurrency: 'BTCUSD',
   chartType: 'line',
   metaTraderEnabled: false,
+  autoTrading: false,
+  tradingInterval: 30, // Check for trading opportunities every 30 seconds
+  minSignalStrength: 0.3, // Minimum signal strength (0.3 out of 1)
+  confirmationCount: 3, // At least 3 indicators should confirm the signal
 };
 
 // Available currencies for trading
@@ -164,6 +172,42 @@ export const generateIndicators = (): Indicator[] => {
       strength: Math.random(),
     },
   ];
+};
+
+// Smart trade decision function to achieve high win rate
+export const analyzeMarketConditions = (indicators: Indicator[]): {
+  decision: 'buy' | 'sell' | 'neutral';
+  confidence: number;
+  confirmedCount: number;
+} => {
+  // Count indicators by signal
+  const buySignals = indicators.filter(i => i.signal === 'buy');
+  const sellSignals = indicators.filter(i => i.signal === 'sell');
+  
+  // Calculate total strength of each signal type
+  const buyStrength = buySignals.reduce((sum, i) => sum + i.strength, 0) / Math.max(1, buySignals.length);
+  const sellStrength = sellSignals.reduce((sum, i) => sum + i.strength, 0) / Math.max(1, sellSignals.length);
+  
+  // Determine overall market direction
+  if (buySignals.length > sellSignals.length && buyStrength > 0.5) {
+    return {
+      decision: 'buy',
+      confidence: buyStrength,
+      confirmedCount: buySignals.length
+    };
+  } else if (sellSignals.length > buySignals.length && sellStrength > 0.5) {
+    return {
+      decision: 'sell',
+      confidence: sellStrength,
+      confirmedCount: sellSignals.length
+    };
+  }
+  
+  return {
+    decision: 'neutral',
+    confidence: 0,
+    confirmedCount: 0
+  };
 };
 
 // Calculate potential profit/loss based on settings

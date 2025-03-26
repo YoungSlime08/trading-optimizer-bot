@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { 
   TradeSettings, 
   TradeResult, 
@@ -10,9 +9,11 @@ import {
   defaultTradingSettings,
   generateIndicators,
   generateCandlestickSeries,
-  availableCurrencies
+  availableCurrencies,
+  analyzeMarketConditions
 } from '@/utils/tradingUtils';
 import { metaTraderService } from '@/services/metaTraderService';
+import { toast } from '@/components/ui/use-toast';
 
 interface TradingContextType {
   settings: TradeSettings;
@@ -30,6 +31,7 @@ interface TradingContextType {
   disconnectFromMetaTrader: () => void;
   isMetaTraderConnected: () => boolean;
   executeMT5Trade: (direction: 'long' | 'short', price: number) => Promise<boolean>;
+  toggleAutoTrading: (enabled: boolean) => void;
 }
 
 const initialAccountStats: AccountStats = {
@@ -51,6 +53,26 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
   const [candlestickData, setCandlestickData] = useState<Candlestick[]>(
     generateCandlestickSeries(100, 20, 0.01)
   );
+  
+  // Auto-trading interval reference
+  const autoTradingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Toggle auto-trading
+  const toggleAutoTrading = (enabled: boolean) => {
+    updateSettings({ autoTrading: enabled });
+    
+    if (enabled) {
+      toast({
+        title: "Auto-Trading Enabled",
+        description: `Bot will execute trades with ${settings.minSignalStrength * 100}% minimum confidence`,
+      });
+    } else {
+      toast({
+        title: "Auto-Trading Disabled",
+        description: "Automatic trading has been stopped",
+      });
+    }
+  };
 
   // Update settings
   const updateSettings = (newSettings: Partial<TradeSettings>) => {
@@ -150,7 +172,7 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
     const tradeIndex = activeTrades.findIndex(trade => trade.id === id);
     if (tradeIndex === -1) return;
     
-    const closedTrade = { ...activeTrades[tradeIndex], status: 'closed' };
+    const closedTrade = { ...activeTrades[tradeIndex], status: 'closed' as const };
     
     // Update account stats
     setAccountStats(prev => {
@@ -193,6 +215,72 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
     setTradeHistory([]);
     setSettings(defaultTradingSettings);
   };
+
+  // Effect for auto-trading
+  useEffect(() => {
+    if (settings.autoTrading) {
+      // Clear any existing interval
+      if (autoTradingIntervalRef.current) {
+        clearInterval(autoTradingIntervalRef.current);
+      }
+      
+      // Set new interval
+      autoTradingIntervalRef.current = setInterval(() => {
+        // Maximum number of trades based on risk settings
+        const maxTrades = Math.floor(100 / settings.riskPercentage);
+        
+        // Don't execute more trades if we've reached the maximum
+        if (activeTrades.length >= maxTrades) {
+          return;
+        }
+        
+        // Analyze market conditions
+        const analysis = analyzeMarketConditions(indicators);
+        
+        // Check if we should execute a trade
+        if (
+          analysis.confidence >= settings.minSignalStrength && 
+          analysis.confirmedCount >= settings.confirmationCount &&
+          analysis.decision !== 'neutral'
+        ) {
+          // Use the last candle close price as the current price
+          const currentPrice = candlestickData[candlestickData.length - 1].close;
+          
+          // Execute trade
+          const direction = analysis.decision === 'buy' ? 'long' : 'short';
+          
+          if (settings.metaTraderEnabled && isMetaTraderConnected()) {
+            executeMT5Trade(direction, currentPrice).then(success => {
+              if (success) {
+                toast({
+                  title: "Auto-Trade Executed via MT5",
+                  description: `${direction === 'long' ? 'Buy' : 'Sell'} ${settings.selectedCurrency} at ${currentPrice.toFixed(2)} with ${(analysis.confidence * 100).toFixed(0)}% confidence`,
+                });
+              }
+            });
+          } else {
+            executeNewTrade(direction, currentPrice);
+            toast({
+              title: "Auto-Trade Executed",
+              description: `${direction === 'long' ? 'Buy' : 'Sell'} ${settings.selectedCurrency} at ${currentPrice.toFixed(2)} with ${(analysis.confidence * 100).toFixed(0)}% confidence`,
+            });
+          }
+        }
+      }, settings.tradingInterval * 1000);
+      
+      // Clean up on unmount or when auto-trading is disabled
+      return () => {
+        if (autoTradingIntervalRef.current) {
+          clearInterval(autoTradingIntervalRef.current);
+          autoTradingIntervalRef.current = null;
+        }
+      };
+    } else if (autoTradingIntervalRef.current) {
+      // Clear interval if auto-trading is disabled
+      clearInterval(autoTradingIntervalRef.current);
+      autoTradingIntervalRef.current = null;
+    }
+  }, [settings.autoTrading, settings.tradingInterval, settings.minSignalStrength, settings.confirmationCount, indicators]);
 
   // Refresh indicators periodically (for demo)
   useEffect(() => {
@@ -349,6 +437,7 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
     disconnectFromMetaTrader,
     isMetaTraderConnected,
     executeMT5Trade,
+    toggleAutoTrading,
   };
 
   return (

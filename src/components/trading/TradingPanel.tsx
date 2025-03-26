@@ -7,6 +7,7 @@ import { formatCurrency, formatPercentage } from '@/utils/tradingUtils';
 import RiskManagementSlider from './RiskManagementSlider';
 import GlassCard from '../common/GlassCard';
 import { useToast } from '@/components/ui/use-toast';
+import AutoTradingControl from './AutoTradingControl';
 import {
   Select,
   SelectContent,
@@ -134,6 +135,9 @@ const TradingPanel = () => {
           <span>Smart Trading</span>
         </div>
       </div>
+      
+      {/* Auto Trading Control */}
+      <AutoTradingControl />
       
       {/* Currency Selection and Chart Type */}
       <div className="flex items-center justify-between gap-2">

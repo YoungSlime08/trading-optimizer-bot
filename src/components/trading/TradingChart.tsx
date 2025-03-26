@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Line, 
@@ -95,7 +94,7 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
         <Bar
           dataKey={(data) => [data.open, data.close]}
           fill={(data) => data.open > data.close ? '#FF5252' : '#4CAF50'}
-          width={8}
+          yAxisId="volume"
         />
         
         {/* Render volume */}
