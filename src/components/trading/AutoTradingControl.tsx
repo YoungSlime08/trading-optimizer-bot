@@ -1,240 +1,158 @@
 
 import React from 'react';
-import { Switch } from "@/components/ui/switch";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle,
-} from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
+import { Toggle } from '@/components/ui/toggle';
 import { useTrading } from '@/context/TradingContext';
-import { 
-  RocketIcon, 
-  ApertureIcon, 
-  TimerIcon, 
-  AlertTriangleIcon,
-  LineChartIcon,
-  TrendingUpIcon,
-  BarChart3Icon,
-  ActivityIcon,
-  DotIcon,
-  MoveIcon
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Slider } from '@/components/ui/slider';
+import { CheckCircle, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const AutoTradingControl = () => {
-  const { settings, updateSettings, toggleAutoTrading } = useTrading();
+  const { settings, toggleAutoTrading, updateSettings } = useTrading();
   
-  const handleToggleAutoTrading = (checked: boolean) => {
-    toggleAutoTrading(checked);
-  };
-
-  const handleToggleIndicator = (indicator: keyof typeof settings.enabledIndicators, checked: boolean) => {
+  const handleIndicatorToggle = (name: keyof typeof settings.enabledIndicators) => {
     updateSettings({
       enabledIndicators: {
         ...settings.enabledIndicators,
-        [indicator]: checked
+        [name]: !settings.enabledIndicators[name]
       }
     });
   };
   
   return (
-    <Card className={cn(
-      "border-2 transition-colors duration-200",
-      settings.autoTrading ? "border-green-400 shadow-md shadow-green-100" : "border-gray-200"
-    )}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <RocketIcon 
-              className={cn(
-                "h-5 w-5 transition-colors", 
-                settings.autoTrading ? "text-green-500" : "text-gray-400"
-              )} 
-            />
-            <CardTitle className="text-base">Auto-Trading Bot</CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={settings.autoTrading ? "success" : "outline"}>
-              {settings.autoTrading ? "Active" : "Inactive"}
-            </Badge>
-            <Switch
-              checked={settings.autoTrading}
-              onCheckedChange={handleToggleAutoTrading}
-              aria-label="Toggle auto-trading"
-            />
-          </div>
+    <div className="border border-gray-100 rounded-lg p-3 bg-gray-50/60 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-sm font-semibold">Auto-Trading</h3>
+          <Badge variant={settings.autoTrading ? "default" : "outline"} className={settings.autoTrading ? "bg-green-500" : ""}>
+            {settings.autoTrading ? 'Active' : 'Disabled'}
+          </Badge>
         </div>
-        <CardDescription>
-          {settings.autoTrading 
-            ? "AI bot is actively looking for trading opportunities" 
-            : "Switch on to let the AI find and execute trades for you"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pb-3 pt-1 space-y-4">
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1">
-              <ApertureIcon className="h-3.5 w-3.5" /> 
-              <span>Signal Strength</span>
-            </div>
-            <span className="font-medium">{Math.round(settings.minSignalStrength * 100)}%</span>
-          </div>
-          <Slider
-            value={[settings.minSignalStrength * 100]}
-            min={30}
-            max={95}
+        <Toggle 
+          pressed={settings.autoTrading} 
+          onPressedChange={toggleAutoTrading}
+          size="sm"
+          className={settings.autoTrading ? "bg-green-500 text-white" : ""}
+        >
+          {settings.autoTrading ? 'Running' : 'Start Bot'}
+        </Toggle>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs text-gray-500 flex items-center justify-between">
+            Signal Strength
+            <span className="font-medium">{(settings.minSignalStrength * 100).toFixed(0)}%</span>
+          </label>
+          <Slider 
+            value={[settings.minSignalStrength * 100]} 
+            min={50} 
+            max={95} 
             step={5}
-            disabled={!settings.autoTrading}
-            onValueChange={(values) => {
-              updateSettings({ minSignalStrength: values[0] / 100 });
-            }}
+            className="mt-1"
+            onValueChange={(value) => updateSettings({ minSignalStrength: value[0] / 100 })}
           />
-          <p className="text-xs text-gray-500">Minimum confidence required to execute a trade</p>
         </div>
-        
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1">
-              <AlertTriangleIcon className="h-3.5 w-3.5" /> 
-              <span>Confirmations</span>
-            </div>
-            <span className="font-medium">{settings.confirmationCount}/{6}</span>
-          </div>
-          <Slider
-            value={[settings.confirmationCount]}
-            min={1}
-            max={6}
-            step={1}
-            disabled={!settings.autoTrading}
-            onValueChange={(values) => {
-              updateSettings({ confirmationCount: values[0] });
-            }}
-          />
-          <p className="text-xs text-gray-500">Minimum indicators confirming the signal</p>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1">
-              <TimerIcon className="h-3.5 w-3.5" /> 
-              <span>Check Interval</span>
-            </div>
-            <span className="font-medium">{settings.tradingInterval}s</span>
-          </div>
-          <Slider
-            value={[settings.tradingInterval]}
-            min={10}
-            max={60}
-            step={5}
-            disabled={!settings.autoTrading}
-            onValueChange={(values) => {
-              updateSettings({ tradingInterval: values[0] });
-            }}
-          />
-          <p className="text-xs text-gray-500">How often to check for new trading opportunities</p>
-        </div>
-
-        <Separator className="my-2" />
         
         <div>
-          <h4 className="text-sm font-medium mb-2">Enabled Indicators</h4>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="indicator-sma" 
-                checked={settings.enabledIndicators.sma}
-                onCheckedChange={(checked) => handleToggleIndicator('sma', !!checked)}
-                disabled={!settings.autoTrading}
-              />
-              <label htmlFor="indicator-sma" className="text-sm flex items-center cursor-pointer">
-                <LineChartIcon className="h-3.5 w-3.5 mr-1 text-blue-500" />
-                SMA (50)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="indicator-ema" 
-                checked={settings.enabledIndicators.ema}
-                onCheckedChange={(checked) => handleToggleIndicator('ema', !!checked)}
-                disabled={!settings.autoTrading}
-              />
-              <label htmlFor="indicator-ema" className="text-sm flex items-center cursor-pointer">
-                <TrendingUpIcon className="h-3.5 w-3.5 mr-1 text-indigo-500" />
-                EMA (9)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="indicator-rsi" 
-                checked={settings.enabledIndicators.rsi}
-                onCheckedChange={(checked) => handleToggleIndicator('rsi', !!checked)}
-                disabled={!settings.autoTrading}
-              />
-              <label htmlFor="indicator-rsi" className="text-sm flex items-center cursor-pointer">
-                <ActivityIcon className="h-3.5 w-3.5 mr-1 text-purple-500" />
-                RSI (14)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="indicator-macd" 
-                checked={settings.enabledIndicators.macd}
-                onCheckedChange={(checked) => handleToggleIndicator('macd', !!checked)}
-                disabled={!settings.autoTrading}
-              />
-              <label htmlFor="indicator-macd" className="text-sm flex items-center cursor-pointer">
-                <BarChart3Icon className="h-3.5 w-3.5 mr-1 text-green-500" />
-                MACD
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="indicator-bollinger" 
-                checked={settings.enabledIndicators.bollinger}
-                onCheckedChange={(checked) => handleToggleIndicator('bollinger', !!checked)}
-                disabled={!settings.autoTrading}
-              />
-              <label htmlFor="indicator-bollinger" className="text-sm flex items-center cursor-pointer">
-                <DotIcon className="h-3.5 w-3.5 mr-1 text-orange-500" />
-                Bollinger
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="indicator-parabolicSar" 
-                checked={settings.enabledIndicators.parabolicSar}
-                onCheckedChange={(checked) => handleToggleIndicator('parabolicSar', !!checked)}
-                disabled={!settings.autoTrading}
-              />
-              <label htmlFor="indicator-parabolicSar" className="text-sm flex items-center cursor-pointer">
-                <MoveIcon className="h-3.5 w-3.5 mr-1 text-red-500" />
-                Parabolic SAR
-              </label>
-            </div>
-          </div>
+          <label className="text-xs text-gray-500 flex items-center justify-between">
+            Confirmations
+            <span className="font-medium">{settings.confirmationCount}</span>
+          </label>
+          <Slider 
+            value={[settings.confirmationCount]} 
+            min={1} 
+            max={5} 
+            step={1}
+            className="mt-1"
+            onValueChange={(value) => updateSettings({ confirmationCount: value[0] })}
+          />
         </div>
-      </CardContent>
-      <CardFooter className="pt-0">
-        <div className="w-full rounded-md bg-blue-50 p-2 text-xs text-blue-800">
-          <p className="font-medium">Target: 80%+ Win Rate</p>
-          <p className="text-blue-700 mt-0.5">
-            The bot uses smart entry criteria with SMA, EMA, RSI, MACD, Bollinger Bands, and Parabolic SAR to achieve high accuracy trades.
-          </p>
+      </div>
+      
+      <div>
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-gray-500">Scan Interval</label>
+          <span className="text-xs font-medium">{settings.tradingInterval} sec</span>
         </div>
-      </CardFooter>
-    </Card>
+        <Slider 
+          value={[settings.tradingInterval]} 
+          min={5} 
+          max={60} 
+          step={5}
+          className="mt-1"
+          onValueChange={(value) => updateSettings({ tradingInterval: value[0] })}
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="indicator-sma" 
+            checked={settings.enabledIndicators.sma}
+            onCheckedChange={() => handleIndicatorToggle('sma')}
+          />
+          <label htmlFor="indicator-sma" className="text-xs cursor-pointer">
+            SMA
+          </label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="indicator-ema" 
+            checked={settings.enabledIndicators.ema}
+            onCheckedChange={() => handleIndicatorToggle('ema')}
+          />
+          <label htmlFor="indicator-ema" className="text-xs cursor-pointer">
+            EMA
+          </label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="indicator-rsi" 
+            checked={settings.enabledIndicators.rsi}
+            onCheckedChange={() => handleIndicatorToggle('rsi')}
+          />
+          <label htmlFor="indicator-rsi" className="text-xs cursor-pointer">
+            RSI
+          </label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="indicator-macd" 
+            checked={settings.enabledIndicators.macd}
+            onCheckedChange={() => handleIndicatorToggle('macd')}
+          />
+          <label htmlFor="indicator-macd" className="text-xs cursor-pointer">
+            MACD
+          </label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="indicator-bollinger" 
+            checked={settings.enabledIndicators.bollinger}
+            onCheckedChange={() => handleIndicatorToggle('bollinger')}
+          />
+          <label htmlFor="indicator-bollinger" className="text-xs cursor-pointer">
+            Bollinger
+          </label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="indicator-parabolicsar" 
+            checked={settings.enabledIndicators.parabolicSar}
+            onCheckedChange={() => handleIndicatorToggle('parabolicSar')}
+          />
+          <label htmlFor="indicator-parabolicsar" className="text-xs cursor-pointer">
+            Parabolic SAR
+          </label>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -20,6 +20,7 @@ import {
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TradingPanel = () => {
   const { toast } = useToast();
@@ -38,7 +39,7 @@ const TradingPanel = () => {
   const [simulatedPrice, setSimulatedPrice] = useState(100);
   
   // Calculate how many trades can be taken with current settings
-  const maxTrades = Math.floor(100 / settings.riskPercentage);
+  const maxPossibleTrades = Math.floor(100 / settings.riskPercentage);
   
   // Calculate overall position strength based on indicators
   const signalStrength = indicators.reduce((acc, indicator) => {
@@ -60,10 +61,10 @@ const TradingPanel = () => {
   }
   
   const handleExecuteTrade = async (direction: 'long' | 'short') => {
-    if (activeTrades.length >= maxTrades) {
+    if (activeTrades.length >= settings.maxTrades) {
       toast({
         title: "Maximum trades reached",
-        description: `You can have maximum ${maxTrades} trades with ${settings.riskPercentage}% risk per trade.`,
+        description: `You can have maximum ${settings.maxTrades} trades based on your current settings.`,
         variant: "destructive",
       });
       return;
@@ -132,6 +133,32 @@ const TradingPanel = () => {
     });
   };
 
+  const handleAccountSizeChange = (size: 'small' | 'medium' | 'large') => {
+    let initialBalance;
+    
+    switch(size) {
+      case 'small':
+        initialBalance = 10 + Math.floor(Math.random() * 41); // $10-$50
+        break;
+      case 'medium':
+        initialBalance = 50 + Math.floor(Math.random() * 151); // $50-$200
+        break;
+      case 'large':
+        initialBalance = 500 + Math.floor(Math.random() * 1501); // $500-$2000
+        break;
+    }
+    
+    updateSettings({ 
+      accountSize: size,
+      initialBalance
+    });
+    
+    toast({
+      title: `Account size changed to ${size}`,
+      description: `Initial balance set to ${formatCurrency(initialBalance)}`,
+    });
+  };
+
   return (
     <GlassCard variant="elevated" className="p-4 space-y-6">
       <div className="flex items-center justify-between">
@@ -139,6 +166,55 @@ const TradingPanel = () => {
         <div className="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-600 font-medium flex items-center space-x-1">
           <TrendingUp size={14} />
           <span>MT5 Trading</span>
+        </div>
+      </div>
+      
+      {/* Account Size Selection */}
+      <div>
+        <h3 className="text-sm font-semibold mb-2">Account Configuration</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Account Size</label>
+            <Tabs 
+              defaultValue={settings.accountSize} 
+              className="w-full" 
+              onValueChange={(value) => handleAccountSizeChange(value as 'small' | 'medium' | 'large')}
+            >
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="small">Small</TabsTrigger>
+                <TabsTrigger value="medium">Medium</TabsTrigger>
+                <TabsTrigger value="large">Large</TabsTrigger>
+              </TabsList>
+              <div className="mt-1 text-xs text-gray-500">
+                {settings.accountSize === 'small' && 'Balance: $10-$50'}
+                {settings.accountSize === 'medium' && 'Balance: $50-$200'}
+                {settings.accountSize === 'large' && 'Balance: $500+'}
+              </div>
+            </Tabs>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">
+              Maximum Trades
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoIcon className="h-3 w-3 inline ml-1 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Max number of simultaneous open positions</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </label>
+            <RiskManagementSlider
+              value={settings.maxTrades}
+              min={2}
+              max={300}
+              step={1}
+              onChange={(value) => updateSettings({ maxTrades: value })}
+              formatValue={(v) => `${v} trades`}
+            />
+          </div>
         </div>
       </div>
       
@@ -336,10 +412,10 @@ const TradingPanel = () => {
                 <p className="text-sm font-semibold">{indicator.value}</p>
                 <Badge 
                   variant={
-                    indicator.signal === 'buy' ? 'success' :
+                    indicator.signal === 'buy' ? 'default' :
                     indicator.signal === 'sell' ? 'destructive' : 'outline'
                   }
-                  className="text-[10px] h-5"
+                  className={`text-[10px] h-5 ${indicator.signal === 'buy' ? 'bg-green-500' : ''}`}
                 >
                   {indicator.signal.toUpperCase()}
                 </Badge>
@@ -393,7 +469,7 @@ const TradingPanel = () => {
         
         <p className="text-xs text-gray-500 mt-2 flex items-center">
           <AlertTriangle size={12} className="mr-1" />
-          Maximum {maxTrades} trades with current risk settings
+          Maximum {settings.maxTrades} of {maxPossibleTrades} possible trades with current risk settings
         </p>
       </div>
     </GlassCard>

@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { 
   Line, 
   LineChart, 
@@ -11,11 +12,14 @@ import {
   BarChart,
   Bar,
   ComposedChart,
-  Area 
+  Area,
+  Scatter
 } from 'recharts';
 import { generatePriceSeries } from '@/utils/tradingUtils';
 import GlassCard from '../common/GlassCard';
 import { useTrading } from '@/context/TradingContext';
+import { ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface TradingChartProps {
   activeStopLoss?: number;
@@ -24,7 +28,8 @@ interface TradingChartProps {
 }
 
 const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingChartProps) => {
-  const { settings, candlestickData } = useTrading();
+  const { settings, candlestickData, activeTrades } = useTrading();
+  const [chartSize, setChartSize] = useState<'small' | 'medium' | 'large'>('medium');
   
   const formatYAxis = (value: number) => {
     return value.toFixed(2);
@@ -105,7 +110,57 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           yAxisId="volume"
         />
         
-        {activeStopLoss && (
+        {/* Entry markers for all active trades */}
+        {activeTrades.map((trade, index) => (
+          <React.Fragment key={`trade-${trade.id}`}>
+            {/* Entry marker */}
+            <Scatter
+              name={`Entry-${trade.id}`}
+              data={[{
+                time: candlestickData.length - 5,
+                value: trade.entryPrice,
+                direction: trade.direction
+              }]}
+              fill={trade.direction === 'long' ? '#4CAF50' : '#FF5252'}
+              shape={(props) => {
+                const { cx, cy, fill } = props;
+                return trade.direction === 'long' ? (
+                  <ArrowUpRight x={cx} y={cy} size={14} color={fill as string} />
+                ) : (
+                  <ArrowDownRight x={cx} y={cy} size={14} color={fill as string} />
+                );
+              }}
+            />
+            
+            {/* Stop Loss line */}
+            <ReferenceLine 
+              y={trade.stopLoss} 
+              stroke="#FF5252" 
+              strokeDasharray="3 3" 
+              label={{ 
+                value: `SL: ${trade.stopLoss.toFixed(2)}`, 
+                position: 'insideBottomRight',
+                fill: '#FF5252',
+                fontSize: 10
+              }} 
+            />
+            
+            {/* Take Profit line */}
+            <ReferenceLine 
+              y={trade.takeProfit} 
+              stroke="#4CAF50" 
+              strokeDasharray="3 3" 
+              label={{ 
+                value: `TP: ${trade.takeProfit.toFixed(2)}`, 
+                position: 'insideTopRight',
+                fill: '#4CAF50',
+                fontSize: 10
+              }} 
+            />
+          </React.Fragment>
+        ))}
+        
+        {activeStopLoss && !activeTrades.some(t => t.stopLoss === activeStopLoss) && (
           <ReferenceLine 
             y={activeStopLoss} 
             stroke="#FF5252" 
@@ -119,7 +174,7 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           />
         )}
         
-        {activeTakeProfit && (
+        {activeTakeProfit && !activeTrades.some(t => t.takeProfit === activeTakeProfit) && (
           <ReferenceLine 
             y={activeTakeProfit} 
             stroke="#4CAF50" 
@@ -133,7 +188,7 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           />
         )}
         
-        {entryPrice && (
+        {entryPrice && !activeTrades.some(t => t.entryPrice === entryPrice) && (
           <ReferenceLine 
             y={entryPrice} 
             stroke="#757575" 
@@ -178,7 +233,57 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           isAnimationActive={false}
         />
         
-        {activeStopLoss && (
+        {/* Entry markers for all active trades */}
+        {activeTrades.map((trade, index) => (
+          <React.Fragment key={`trade-${trade.id}`}>
+            {/* Stop Loss line */}
+            <ReferenceLine 
+              y={trade.stopLoss} 
+              stroke="#FF5252" 
+              strokeDasharray="3 3" 
+              label={{ 
+                value: `SL: ${trade.stopLoss.toFixed(2)}`, 
+                position: 'insideBottomRight',
+                fill: '#FF5252',
+                fontSize: 10
+              }} 
+            />
+            
+            {/* Take Profit line */}
+            <ReferenceLine 
+              y={trade.takeProfit} 
+              stroke="#4CAF50" 
+              strokeDasharray="3 3" 
+              label={{ 
+                value: `TP: ${trade.takeProfit.toFixed(2)}`, 
+                position: 'insideTopRight',
+                fill: '#4CAF50',
+                fontSize: 10
+              }} 
+            />
+            
+            {/* Entry markers */}
+            <Scatter
+              name={`Entry-${trade.id}`}
+              data={[{
+                time: data.length - 5,
+                price: trade.entryPrice,
+                direction: trade.direction
+              }]}
+              fill={trade.direction === 'long' ? '#4CAF50' : '#FF5252'}
+              shape={(props) => {
+                const { cx, cy, fill } = props;
+                return trade.direction === 'long' ? (
+                  <ArrowUpRight x={cx} y={cy} size={14} color={fill as string} />
+                ) : (
+                  <ArrowDownRight x={cx} y={cy} size={14} color={fill as string} />
+                );
+              }}
+            />
+          </React.Fragment>
+        ))}
+        
+        {activeStopLoss && !activeTrades.some(t => t.stopLoss === activeStopLoss) && (
           <ReferenceLine 
             y={activeStopLoss} 
             stroke="#FF5252" 
@@ -192,7 +297,7 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           />
         )}
         
-        {activeTakeProfit && (
+        {activeTakeProfit && !activeTrades.some(t => t.takeProfit === activeTakeProfit) && (
           <ReferenceLine 
             y={activeTakeProfit} 
             stroke="#4CAF50" 
@@ -206,7 +311,7 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
           />
         )}
         
-        {entryPrice && (
+        {entryPrice && !activeTrades.some(t => t.entryPrice === entryPrice) && (
           <ReferenceLine 
             y={entryPrice} 
             stroke="#757575" 
@@ -223,8 +328,16 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
     );
   };
 
+  const getChartHeight = () => {
+    switch (chartSize) {
+      case 'small': return 'h-48 md:h-64';
+      case 'large': return 'h-96 md:h-[32rem]';
+      default: return 'h-72 md:h-96';
+    }
+  };
+
   return (
-    <GlassCard variant="elevated" className="p-4 h-72 md:h-96">
+    <GlassCard variant="elevated" className={`p-4 ${getChartHeight()}`}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-medium">Price Chart</h3>
         <div className="flex items-center space-x-2">
@@ -240,9 +353,62 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
         </div>
       </div>
       
-      <ResponsiveContainer width="100%" height="90%">
-        {settings.chartType === 'line' ? renderLineChart() : renderCandlestick()}
-      </ResponsiveContainer>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2">
+          <Select value={settings.chartSource} onValueChange={(value) => settings.updateSettings({ chartSource: value as 'internal' | 'tradingview' | 'mt5' })}>
+            <SelectTrigger className="h-8 w-36">
+              <SelectValue placeholder="Chart Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="internal">Basic Chart</SelectItem>
+              <SelectItem value="tradingview">TradingView</SelectItem>
+              <SelectItem value="mt5">MetaTrader 5</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={chartSize} onValueChange={(value) => setChartSize(value as 'small' | 'medium' | 'large')}>
+            <SelectTrigger className="h-8 w-32">
+              <SelectValue placeholder="Chart Size" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="small">Small</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="large">Large</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {(settings.chartSource === 'tradingview' || settings.chartSource === 'mt5') && (
+          <a 
+            href={settings.chartSource === 'tradingview' 
+              ? `https://www.tradingview.com/chart/?symbol=${settings.selectedCurrency}` 
+              : `https://www.metatrader5.com/en/terminal`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs flex items-center text-blue-600 hover:text-blue-800"
+          >
+            Open {settings.chartSource === 'tradingview' ? 'TradingView' : 'MT5'}
+            <ExternalLink size={12} className="ml-1" />
+          </a>
+        )}
+      </div>
+      
+      {settings.chartSource === 'internal' ? (
+        <ResponsiveContainer width="100%" height="85%">
+          {settings.chartType === 'line' ? renderLineChart() : renderCandlestick()}
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex items-center justify-center h-[85%] bg-gray-50 rounded-md">
+          <div className="text-center p-4">
+            <p className="text-sm text-gray-600 mb-2">
+              {settings.chartSource === 'tradingview' ? 'TradingView' : 'MetaTrader 5'} integration
+            </p>
+            <p className="text-xs text-gray-500">
+              For full functionality, please use the external link above to access the {settings.chartSource === 'tradingview' ? 'TradingView' : 'MT5'} platform.
+            </p>
+          </div>
+        </div>
+      )}
     </GlassCard>
   );
 };

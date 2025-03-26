@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { 
   TradeSettings, 
@@ -46,8 +45,19 @@ const initialAccountStats: AccountStats = {
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
 
 export const TradingProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<TradeSettings>(defaultTradingSettings);
-  const [accountStats, setAccountStats] = useState<AccountStats>(initialAccountStats);
+  const [settings, setSettings] = useState<TradeSettings>({
+    ...defaultTradingSettings,
+    maxTrades: 10, // Default max trades
+    accountSize: 'medium', // Default account size
+    initialBalance: 100, // Default initial balance
+    chartSource: 'internal' // Default chart source
+  });
+  const [accountStats, setAccountStats] = useState<AccountStats>({
+    ...initialAccountStats,
+    balance: settings.initialBalance,
+    equity: settings.initialBalance
+  });
+  
   const [activeTrades, setActiveTrades] = useState<TradeResult[]>([]);
   const [tradeHistory, setTradeHistory] = useState<TradeResult[]>([]);
   const [indicators, setIndicators] = useState<Indicator[]>(generateIndicators());
@@ -57,6 +67,24 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
   
   // Auto-trading interval reference
   const autoTradingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update settings
+  const updateSettings = (newSettings: Partial<TradeSettings>) => {
+    setSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      
+      // If initial balance is updated, update the account stats
+      if (newSettings.initialBalance !== undefined && prev.initialBalance !== newSettings.initialBalance) {
+        setAccountStats(prevStats => ({
+          ...prevStats,
+          balance: newSettings.initialBalance as number,
+          equity: newSettings.initialBalance as number
+        }));
+      }
+      
+      return updated;
+    });
+  };
 
   // Toggle auto-trading
   const toggleAutoTrading = (enabled: boolean) => {
@@ -73,11 +101,6 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
         description: "Automatic trading has been stopped",
       });
     }
-  };
-
-  // Update settings
-  const updateSettings = (newSettings: Partial<TradeSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
   };
 
   // Connect to MetaTrader 5
@@ -132,6 +155,16 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
 
   // Execute a new trade
   const executeNewTrade = (direction: 'long' | 'short', price: number) => {
+    // Check if we've reached the maximum number of trades
+    if (activeTrades.length >= settings.maxTrades) {
+      toast({
+        title: "Maximum trades reached",
+        description: `You can have maximum ${settings.maxTrades} trades based on your current settings.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Calculate position size based on risk percentage
     const riskAmount = accountStats.balance * (settings.riskPercentage / 100);
     const stopLossPrice = direction === 'long' 
@@ -227,11 +260,8 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
       
       // Set new interval
       autoTradingIntervalRef.current = setInterval(() => {
-        // Maximum number of trades based on risk settings
-        const maxTrades = Math.floor(100 / settings.riskPercentage);
-        
         // Don't execute more trades if we've reached the maximum
-        if (activeTrades.length >= maxTrades) {
+        if (activeTrades.length >= settings.maxTrades) {
           return;
         }
         
@@ -297,7 +327,15 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
       clearInterval(autoTradingIntervalRef.current);
       autoTradingIntervalRef.current = null;
     }
-  }, [settings.autoTrading, settings.tradingInterval, settings.minSignalStrength, settings.confirmationCount, settings.enabledIndicators, indicators]);
+  }, [
+    settings.autoTrading, 
+    settings.tradingInterval, 
+    settings.minSignalStrength, 
+    settings.confirmationCount, 
+    settings.enabledIndicators, 
+    settings.maxTrades, 
+    indicators
+  ]);
 
   // Refresh indicators periodically (for demo)
   useEffect(() => {
