@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Line, 
@@ -106,8 +105,8 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
         {/* Render body as bar */}
         <Bar
           dataKey={(data) => [data.open, data.close]}
-          fill={(data) => (data.open > data.close ? '#FF5252' : '#4CAF50') as string}
-          yAxisId="volume"
+          fill="#8884d8"
+          name="Price Range"
         />
         
         {/* Render volume */}

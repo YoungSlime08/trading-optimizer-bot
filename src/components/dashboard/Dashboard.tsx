@@ -7,11 +7,11 @@ import TradingPanel from '../trading/TradingPanel';
 import TradingChart from '../trading/TradingChart';
 import MetaTraderConnect from '../trading/MetaTraderConnect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMediaQuery } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
   const { activeTrades } = useTrading();
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<string>('panel');
   
   // Get the first active trade for chart references
