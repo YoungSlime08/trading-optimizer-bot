@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, TrendingUp, LineChart, InfoIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -207,6 +206,7 @@ const TradingPanel = () => {
               </TooltipProvider>
             </label>
             <RiskManagementSlider
+              label="Max Trades"
               value={settings.maxTrades}
               min={2}
               max={300}
@@ -221,7 +221,6 @@ const TradingPanel = () => {
       {/* Auto Trading Control */}
       <AutoTradingControl />
       
-      {/* Currency Selection and Chart Type */}
       <div className="flex items-center justify-between gap-2">
         <Select value={settings.selectedCurrency} onValueChange={handleCurrencyChange}>
           <SelectTrigger className="w-[180px]">
@@ -300,7 +299,6 @@ const TradingPanel = () => {
         </Toggle>
       </div>
       
-      {/* Account Information */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="px-3 py-2 rounded-md bg-gray-50">
           <p className="text-xs text-gray-500">Balance</p>
@@ -320,7 +318,6 @@ const TradingPanel = () => {
         </div>
       </div>
       
-      {/* Risk Management */}
       <div>
         <h3 className="text-sm font-semibold mb-3">Risk Management</h3>
         <div className="space-y-4">
@@ -384,7 +381,6 @@ const TradingPanel = () => {
         </div>
       </div>
       
-      {/* Trading Signals */}
       <div>
         <h3 className="text-sm font-semibold mb-3">Trading Signals</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -447,7 +443,6 @@ const TradingPanel = () => {
         </div>
       </div>
       
-      {/* Execute Trade Buttons */}
       <div className="pt-2">
         <div className="grid grid-cols-1 gap-y-2 gap-x-4 sm:grid-cols-2">
           <Button

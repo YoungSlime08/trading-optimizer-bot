@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Line, 
   LineChart, 
@@ -28,8 +28,16 @@ interface TradingChartProps {
 }
 
 const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingChartProps) => {
-  const { settings, candlestickData, activeTrades } = useTrading();
+  const { settings, candlestickData, activeTrades, updateSettings } = useTrading();
   const [chartSize, setChartSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [tradingViewUrl, setTradingViewUrl] = useState('');
+  
+  useEffect(() => {
+    // Update TradingView URL when currency changes
+    if (settings.chartSource === 'tradingview') {
+      setTradingViewUrl(`https://www.tradingview.com/chart/?symbol=${settings.selectedCurrency}`);
+    }
+  }, [settings.selectedCurrency, settings.chartSource]);
   
   const formatYAxis = (value: number) => {
     return value.toFixed(2);
@@ -98,7 +106,7 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
         {/* Render body as bar */}
         <Bar
           dataKey={(data) => [data.open, data.close]}
-          fill={(data) => data.open > data.close ? '#FF5252' : '#4CAF50'}
+          fill={(data) => (data.open > data.close ? '#FF5252' : '#4CAF50') as string}
           yAxisId="volume"
         />
         
@@ -328,11 +336,61 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
     );
   };
 
+  // Render TradingView chart
+  const renderTradingViewChart = () => {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <iframe
+          src={`https://www.tradingview.com/chart/?symbol=${settings.selectedCurrency}&interval=15&theme=light&hide_side_toolbar=1&utm_source=element-a-trading-app&utm_medium=widget&utm_campaign=chart`}
+          className="w-full h-full border-0 rounded-md"
+          style={{ height: '100%', minHeight: '300px' }}
+          title="TradingView Chart"
+        />
+      </div>
+    );
+  };
+
+  // Render MT5 chart placeholder
+  const renderMT5Chart = () => {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-50 rounded-md">
+        <div className="text-center p-4">
+          <p className="text-sm text-gray-600 mb-2">
+            MetaTrader 5 Chart Integration
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            For full MT5 functionality, please use the external link above to access the MetaTrader 5 platform.
+          </p>
+          <a 
+            href="https://www.metatrader5.com/en/terminal" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs flex items-center justify-center text-blue-600 hover:text-blue-800 underline"
+          >
+            Download MetaTrader 5
+            <ExternalLink size={12} className="ml-1" />
+          </a>
+        </div>
+      </div>
+    );
+  };
+
   const getChartHeight = () => {
     switch (chartSize) {
       case 'small': return 'h-48 md:h-64';
       case 'large': return 'h-96 md:h-[32rem]';
       default: return 'h-72 md:h-96';
+    }
+  };
+
+  const renderSelectedChart = () => {
+    if (settings.chartSource === 'tradingview') {
+      return renderTradingViewChart();
+    } else if (settings.chartSource === 'mt5') {
+      return renderMT5Chart();
+    } else {
+      // Internal chart
+      return settings.chartType === 'line' ? renderLineChart() : renderCandlestick();
     }
   };
 
@@ -355,7 +413,10 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
       
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
-          <Select value={settings.chartSource} onValueChange={(value) => settings.updateSettings({ chartSource: value as 'internal' | 'tradingview' | 'mt5' })}>
+          <Select 
+            value={settings.chartSource} 
+            onValueChange={(value) => updateSettings({ chartSource: value as 'internal' | 'tradingview' | 'mt5' })}
+          >
             <SelectTrigger className="h-8 w-36">
               <SelectValue placeholder="Chart Source" />
             </SelectTrigger>
@@ -393,22 +454,15 @@ const TradingChart = ({ activeStopLoss, activeTakeProfit, entryPrice }: TradingC
         )}
       </div>
       
-      {settings.chartSource === 'internal' ? (
-        <ResponsiveContainer width="100%" height="85%">
-          {settings.chartType === 'line' ? renderLineChart() : renderCandlestick()}
-        </ResponsiveContainer>
-      ) : (
-        <div className="flex items-center justify-center h-[85%] bg-gray-50 rounded-md">
-          <div className="text-center p-4">
-            <p className="text-sm text-gray-600 mb-2">
-              {settings.chartSource === 'tradingview' ? 'TradingView' : 'MetaTrader 5'} integration
-            </p>
-            <p className="text-xs text-gray-500">
-              For full functionality, please use the external link above to access the {settings.chartSource === 'tradingview' ? 'TradingView' : 'MT5'} platform.
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="h-[85%]">
+        {settings.chartSource === 'internal' ? (
+          <ResponsiveContainer width="100%" height="100%">
+            {settings.chartType === 'line' ? renderLineChart() : renderCandlestick()}
+          </ResponsiveContainer>
+        ) : (
+          renderSelectedChart()
+        )}
+      </div>
     </GlassCard>
   );
 };

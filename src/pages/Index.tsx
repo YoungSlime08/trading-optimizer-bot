@@ -14,6 +14,11 @@ const Index = () => {
           <Dashboard />
         </main>
         <Footer />
+        
+        {/* App Store Ready Indicator - Remove in production */}
+        <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-medium shadow-lg">
+          App Store Ready
+        </div>
       </div>
     </TradingProvider>
   );
